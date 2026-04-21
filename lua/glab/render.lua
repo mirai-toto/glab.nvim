@@ -1,4 +1,3 @@
-local types = require("glab.types")
 local form = require("glab.form")
 local utils = require("glab.utils")
 
@@ -7,6 +6,27 @@ local M = {}
 local NS = vim.api.nvim_create_namespace("glab_pipeline_run")
 
 local COL_WIDTHS = { key = 20, type = 8, value = 22 }
+
+-- │ (U+2502) is 3 bytes in UTF-8; extmarks use byte offsets
+local COL_SEP       = " │ "
+local COL_SEP_BYTES = 5  -- 1 (space) + 3 (│) + 1 (space)
+
+-- Byte offsets for extmarks
+local KEY_START   = 2
+local KEY_END     = KEY_START + COL_WIDTHS.key      -- 22
+local TYPE_START  = KEY_END + COL_SEP_BYTES          -- 27
+local TYPE_END    = TYPE_START + COL_WIDTHS.type     -- 35
+local VALUE_START = TYPE_END + COL_SEP_BYTES         -- 40
+local VALUE_END   = VALUE_START + COL_WIDTHS.value   -- 62
+
+-- Display width: 2 + 20 + 3 + 8 + 3 + 22 = 58, +4 padding
+M.WIDTH = 2 + COL_WIDTHS.key + 3 + COL_WIDTHS.type + 3 + COL_WIDTHS.value + 4
+
+local SEPARATOR = string.rep("─", 2 + COL_WIDTHS.key)
+  .. "─┼─"
+  .. string.rep("─", COL_WIDTHS.type)
+  .. "─┼─"
+  .. string.rep("─", COL_WIDTHS.value + 2)
 
 -- ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -19,12 +39,7 @@ local function pad(str, len)
 end
 
 local function make_header()
-  return string.format(
-    "  %-" .. COL_WIDTHS.key .. "s  " .. "%-" .. COL_WIDTHS.type .. "s  " .. "%-" .. COL_WIDTHS.value .. "s",
-    "key",
-    "type",
-    "value"
-  )
+  return "  " .. pad("key", COL_WIDTHS.key) .. COL_SEP .. pad("type", COL_WIDTHS.type) .. COL_SEP .. pad("value", COL_WIDTHS.value)
 end
 
 local function make_row_line(row, is_active, cursor_col)
@@ -44,29 +59,20 @@ local function make_row_line(row, is_active, cursor_col)
     end
   end
 
-  return string.format("  %s  %s  %s", key_str, type_str, value_str)
+  return "  " .. key_str .. COL_SEP .. type_str .. COL_SEP .. value_str
 end
-
--- Precomputed column byte offsets for highlights
-local KEY_START   = 2
-local KEY_END     = KEY_START + COL_WIDTHS.key
-local TYPE_START  = KEY_END + 2
-local TYPE_END    = TYPE_START + COL_WIDTHS.type
-local VALUE_START = TYPE_END + 2
-local VALUE_END   = VALUE_START + COL_WIDTHS.value
-local SEP_WIDTH   = VALUE_END + 2
-
-M.WIDTH = SEP_WIDTH + 4
 
 -- ─── Highlight one data row ──────────────────────────────────────────────────
 
 local function highlight_row(buf, line, row, is_active, cursor_col)
-  local hl_key = is_active and cursor_col == 1 and "CursorLine" or "Normal"
-  local hl_type = is_active and cursor_col == 2 and "CursorLine" or row.type.hl
-  local hl_value = is_active and cursor_col == 3 and "CursorLine" or "Normal"
+  local hl_key   = is_active and cursor_col == 1 and "CursorLine" or "Identifier"
+  local hl_type  = is_active and cursor_col == 2 and "CursorLine" or row.type.hl
+  local hl_value = is_active and cursor_col == 3 and "CursorLine" or "String"
 
-  vim.api.nvim_buf_set_extmark(buf, NS, line, KEY_START, { end_col = KEY_END, hl_group = hl_key })
-  vim.api.nvim_buf_set_extmark(buf, NS, line, TYPE_START, { end_col = TYPE_END, hl_group = hl_type })
+  vim.api.nvim_buf_set_extmark(buf, NS, line, KEY_START,   { end_col = KEY_END,   hl_group = hl_key })
+  vim.api.nvim_buf_set_extmark(buf, NS, line, KEY_END,     { end_col = TYPE_START, hl_group = "Comment" })
+  vim.api.nvim_buf_set_extmark(buf, NS, line, TYPE_START,  { end_col = TYPE_END,  hl_group = hl_type })
+  vim.api.nvim_buf_set_extmark(buf, NS, line, TYPE_END,    { end_col = VALUE_START, hl_group = "Comment" })
   vim.api.nvim_buf_set_extmark(buf, NS, line, VALUE_START, { end_col = VALUE_END, hl_group = hl_value })
 end
 
@@ -81,17 +87,16 @@ M.render = function()
   vim.bo[S.buf].modifiable = true
   vim.api.nvim_buf_clear_namespace(S.buf, NS, 0, -1)
 
-  local sep = string.rep("─", SEP_WIDTH)
   local lines = {}
 
   table.insert(lines, make_header())
-  table.insert(lines, sep)
+  table.insert(lines, SEPARATOR)
 
   for i, row in ipairs(S.rows) do
     table.insert(lines, make_row_line(row, S.cursor.row == i, S.cursor.col))
   end
 
-  table.insert(lines, sep)
+  table.insert(lines, SEPARATOR)
   table.insert(lines, "  $ " .. utils.build_cmd(S.branch, S.rows))
   table.insert(lines, "")
   table.insert(lines, "  <a> add  <d> del  <Tab> col  <CR> edit  <r> run  <q> quit")

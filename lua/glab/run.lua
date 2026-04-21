@@ -111,14 +111,9 @@ M.open = function()
   vim.wo[form.STATE.win].number = false
   vim.wo[form.STATE.win].relativenumber = false
   vim.wo[form.STATE.win].signcolumn = "no"
+  vim.wo[form.STATE.win].list = false
 
   vim.api.nvim_buf_set_name(form.STATE.buf, string.format("glab://ci-run/%s", branch))
-
-  vim.api.nvim_create_autocmd("WinLeave", {
-    buffer = form.STATE.buf,
-    once = true,
-    callback = close,
-  })
 
   set_keymaps()
   render.render()
