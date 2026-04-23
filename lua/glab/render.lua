@@ -28,7 +28,7 @@ local SEPARATOR = string.rep("─", 2 + COL_WIDTHS.key)
   .. "─┼─"
   .. string.rep("─", COL_WIDTHS.value + 2)
 
-local HELP_LINE = "  <a> add  <d> del  <Tab> col  <CR> edit  <r> run  <q> quit"
+local HELP_LINE = "  <a> add  <d> del  <Tab> col  <i> edit  <r> run  <q> quit"
 local HELP_SEGMENTS = {
   { "  ",      "Comment" },
   { "<a>",     "Special" },
@@ -37,7 +37,7 @@ local HELP_SEGMENTS = {
   { " del  ",  "Comment" },
   { "<Tab>",   "Special" },
   { " col  ",  "Comment" },
-  { "<CR>",    "Special" },
+  { "<i>",     "Special" },
   { " edit  ", "Comment" },
   { "<r>",     "Special" },
   { " run  ",  "Comment" },

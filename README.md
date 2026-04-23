@@ -38,14 +38,14 @@ A Neovim plugin for running GitLab CI pipelines via [glab](https://gitlab.com/gi
 ────────────────────────────────────────────────────────
   $ glab ci run -b main --input 'my_var:my_value'
 
-  <a> add  <d> del  <Tab> col  <CR> edit  <r> run  <q> quit
+  <a> add  <d> del  <Tab> col  <i> edit  <r> run  <q> quit
 ```
 
 ### Keys
 
 | Key | Action |
 |-----|--------|
-| `<CR>` | Edit the focused field |
+| `i` | Edit the focused field |
 | `<Tab>` / `<S-Tab>` | Move between columns |
 | `j` / `k` | Move between rows |
 | `a` | Add a row |
@@ -53,7 +53,7 @@ A Neovim plugin for running GitLab CI pipelines via [glab](https://gitlab.com/gi
 | `r` | Run the pipeline |
 | `q` / `<Esc>` | Close the panel |
 
-When the cursor is on the **type** column, `<CR>` cycles through: `str → int → flt → bool → arr`.
+When the cursor is on the **type** column, `i` cycles through: `str → int → flt → bool → arr`.
 
 ## Input Autofill
 

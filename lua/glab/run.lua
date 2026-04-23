@@ -52,7 +52,7 @@ local function set_keymaps()
   map("q", close)
   map("<Esc>", close)
   map("r", run_pipeline)
-  map("<CR>", edit_current)
+  map("i", edit_current)
 
   map("a", function()
     form.add_row()
