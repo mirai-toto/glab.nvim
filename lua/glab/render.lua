@@ -28,6 +28,23 @@ local SEPARATOR = string.rep("─", 2 + COL_WIDTHS.key)
   .. "─┼─"
   .. string.rep("─", COL_WIDTHS.value + 2)
 
+local HELP_LINE = "  <a> add  <d> del  <Tab> col  <CR> edit  <r> run  <q> quit"
+local HELP_SEGMENTS = {
+  { "  ",      "Comment" },
+  { "<a>",     "Special" },
+  { " add  ",  "Comment" },
+  { "<d>",     "Special" },
+  { " del  ",  "Comment" },
+  { "<Tab>",   "Special" },
+  { " col  ",  "Comment" },
+  { "<CR>",    "Special" },
+  { " edit  ", "Comment" },
+  { "<r>",     "Special" },
+  { " run  ",  "Comment" },
+  { "<q>",     "Special" },
+  { " quit",   "Comment" },
+}
+
 -- ─── Helpers ─────────────────────────────────────────────────────────────────
 
 local function pad(str, len)
@@ -60,6 +77,27 @@ local function make_row_line(row, is_active, cursor_col)
   end
 
   return "  " .. key_str .. COL_SEP .. type_str .. COL_SEP .. value_str
+end
+
+-- ─── Highlight header ────────────────────────────────────────────────────────
+
+local function highlight_header(buf)
+  vim.api.nvim_buf_set_extmark(buf, NS, 0, 0,           { end_col = KEY_START,   hl_group = "Comment" })
+  vim.api.nvim_buf_set_extmark(buf, NS, 0, KEY_START,   { end_col = KEY_END,     hl_group = "Identifier" })
+  vim.api.nvim_buf_set_extmark(buf, NS, 0, KEY_END,     { end_col = TYPE_START,  hl_group = "Comment" })
+  vim.api.nvim_buf_set_extmark(buf, NS, 0, TYPE_START,  { end_col = TYPE_END,    hl_group = "Type" })
+  vim.api.nvim_buf_set_extmark(buf, NS, 0, TYPE_END,    { end_col = VALUE_START, hl_group = "Comment" })
+  vim.api.nvim_buf_set_extmark(buf, NS, 0, VALUE_START, { end_col = VALUE_END,   hl_group = "String", hl_eol = true })
+end
+
+-- ─── Highlight help line ─────────────────────────────────────────────────────
+
+local function highlight_help(buf, line)
+  local col = 0
+  for _, seg in ipairs(HELP_SEGMENTS) do
+    vim.api.nvim_buf_set_extmark(buf, NS, line, col, { end_col = col + #seg[1], hl_group = seg[2] })
+    col = col + #seg[1]
+  end
 end
 
 -- ─── Highlight one data row ──────────────────────────────────────────────────
@@ -99,12 +137,12 @@ M.render = function()
   table.insert(lines, SEPARATOR)
   table.insert(lines, "  $ " .. utils.build_cmd(S.branch, S.rows))
   table.insert(lines, "")
-  table.insert(lines, "  <a> add  <d> del  <Tab> col  <CR> edit  <r> run  <q> quit")
+  table.insert(lines, HELP_LINE)
 
   vim.api.nvim_buf_set_lines(S.buf, 0, -1, false, lines)
 
   -- Header + separators
-  vim.api.nvim_buf_set_extmark(S.buf, NS, 0, 0, { end_row = 0, hl_group = "Comment", hl_eol = true })
+  highlight_header(S.buf)
   vim.api.nvim_buf_set_extmark(S.buf, NS, 1, 0, { end_row = 1, hl_group = "Comment", hl_eol = true })
 
   -- Data rows
@@ -129,6 +167,7 @@ M.render = function()
     0,
     { end_row = sep_line + 3, hl_group = "Comment", hl_eol = true }
   )
+  highlight_help(S.buf, sep_line + 3)
 
   vim.bo[S.buf].modifiable = false
 
